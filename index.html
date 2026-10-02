@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>हैप्पी दिवाली शुभकामनाएँ</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1a0000;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+        }
+        .container {
+            max-width: 500px;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #ff9900, #ff0000);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+            border: 2px solid gold;
+        }
+        h1 {
+            color: #ffe600;
+            text-shadow: 2px 2px 4px #000;
+        }
+        /* पाने वाले का नाम (Receiver) */
+        .receiver-name {
+            font-size: 35px;
+            color: #00ffcc;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px black;
+            margin-bottom: 10px;
+            display: none; 
+        }
+        .photo-frame {
+            width: 180px;
+            height: 180px;
+            margin: 10px auto;
+            border: 5px solid gold;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #fff;
+            box-shadow: 0 0 15px gold;
+        }
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* भेजने वाले का नाम (Sender) */
+        .sender-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 5px black;
+            margin-top: 10px;
+        }
+        .form-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: black;
+        }
+        input[type="text"], input[type="file"] {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            background-color: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #128C7E;
+        }
+        .loading {
+            font-size: 12px;
+            color: red;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- जिसे भेजा गया है उसका नाम -->
+        <div class="receiver-name" id="display-receiver">✨ दोस्त ✨</div>
+        
+        <h1>शुभ दीपावली</h1>
+        <p>आपको और आपके परिवार को दिवाली की ढेरों शुभकामनाएँ!</p>
+        
+        <!-- फोटो फ्रेम -->
+        <div class="photo-frame">
+            <img id="display-photo" src="https://cdn.pixabay.com/photo/2016/10/22/19/27/diwali-1761614_960_720.jpg" alt="User Photo">
+        </div>
+        
+        <!-- जिसने भेजा है उसका नाम -->
+        <div class="sender-name" id="display-sender">आपके किसी खास</div>
+        <p>की तरफ से!</p>
+
+        <!-- फॉर्म: नया लिंक बनाने के लिए -->
+        <div class="form-box">
+            <h3>👇 अपना और दोस्त का नाम डालें 👇</h3>
+            
+            <input type="text" id="senderInput" placeholder="अपना नाम लिखें (आपका नाम)..." required>
+            <input type="text" id="receiverInput" placeholder="किसे भेजना है? (दोस्त का नाम)..." required>
+            
+            <label style="display:block; text-align:left; font-weight:bold; margin-top:10px;">अपनी फोटो चुनें:</label>
+            <input type="file" id="photoInput" accept="image/*">
+            <p class="loading" id="loadingText">फोटो प्रोसेस हो रही है, कृपया प्रतीक्षा करें...</p>
+
+            <button onclick="shareOnWhatsApp()">WhatsApp पर शेयर करें</button>
+        </div>
+    </div>
+
+    <script>
+        let compressedImageBase64 = "";
+
+        // 1. URL से डेटा निकालना (नाम और फोटो)
+        const urlParams = new URLSearchParams(window.location.search);
+        const senderFromUrl = urlParams.get('s');
+        const receiverFromUrl = urlParams.get('r');
+        const photoFromUrl = urlParams.get('p');
+        
+        if (senderFromUrl) {
+            document.getElementById('display-sender').innerText = senderFromUrl;
+        }
+        if (receiverFromUrl) {
+            document.getElementById('display-receiver').innerText = "✨ " + receiverFromUrl + " ✨";
+            document.getElementById('display-receiver').style.display = "block";
+        }
+        if (photoFromUrl) {
+            document.getElementById('display-photo').src = photoFromUrl; // लिंक वाली फोटो दिखाएं
+        }
+
+        // 2. फोटो को सेलेक्ट करके Compress करना (ताकि लिंक में भेजी जा सके)
+        document.getElementById('photoInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('loadingText').style.display = "block";
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // फोटो को छोटा (120x120) करने के लिए Canvas का उपयोग
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 120;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // फोटो को टेक्स्ट (Base64) में बदलना
+                        compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                        document.getElementById('display-photo').src = compressedImageBase64; // तुरंत पेज पर दिखाएं
+                        document.getElementById('loadingText').style.display = "none";
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 3. WhatsApp पर नया लिंक शेयर करना
+        function shareOnWhatsApp() {
+            let sender = document.getElementById('senderInput').value.trim();
+            let receiver = document.getElementById('receiverInput').value.trim();
+            
+            if (sender === "" || receiver === "") {
+                alert("कृपया अपना और अपने दोस्त दोनों का नाम लिखें!");
+                return;
+            }
+
+            let currentUrl = window.location.href.split('?')[0];
+            
+            // नया लिंक बनाना (नाम + फोटो का डेटा)
+            let newUrl = currentUrl + "?s=" + encodeURIComponent(sender) + "&r=" + encodeURIComponent(receiver);
+            
+            // अगर फोटो सेलेक्ट की गई है तो उसे भी लिंक में जोड़ें
+            if (compressedImageBase64 !== "") {
+                newUrl += "&p=" + encodeURIComponent(compressedImageBase64);
+            }
+            
+            let message = `*${sender}* ने *${receiver}* के लिए एक बहुत ही सुंदर संदेश और अपनी फोटो भेजी है! 🎁✨\nयहाँ क्लिक करके देखें: \n${newUrl}`;
+            
+            window.location.href = "whatsapp://send?text=" + encodeURIComponent(message);
+        }
+    </script>
+</body>
+</html>
